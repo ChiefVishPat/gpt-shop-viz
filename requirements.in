@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]>=2.0
+asyncpg
+pydantic>=2.7
+playwright
+python-dotenv
+alembic
+prometheus-client
+psycopg2-binary
