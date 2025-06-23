@@ -13,4 +13,5 @@ repos:
     rev: v1.16.1
     hooks:
       - id: mypy
-        args: ["--strict"]
+        args: ["--strict", "--allow-untyped-decorators"]
+        additional_dependencies: ["pydantic", "sqlalchemy"]

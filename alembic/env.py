@@ -1,12 +1,41 @@
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, pool
+from sqlalchemy.engine import URL
 
 from alembic import context  # type: ignore[attr-defined]
+
+# ---- Import your Base.metadata for autogenerate ----
+from app.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Load environment variables and build the proper DB URL for migrations
+load_dotenv()
+
+
+def get_database_url(async_driver: bool = True) -> str:
+    driver = 'postgresql+asyncpg' if async_driver else 'postgresql+psycopg2'
+    return str(
+        URL.create(
+            drivername=driver,
+            username=os.environ['POSTGRES_USER'],
+            password=os.environ['POSTGRES_PASSWORD'],
+            host=os.environ['POSTGRES_HOST'],
+            port=int(os.environ['POSTGRES_PORT']),
+            database=os.environ['POSTGRES_DB'],
+        )
+    )
+
+
+# set SQLAlchemy URL in config for both offline autogenerate and online use
+async_url = get_database_url(async_driver=True)
+config.set_main_option('sqlalchemy.url', async_url)
+config.set_section_option(config.config_ini_section, 'sqlalchemy.url', async_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -16,8 +45,8 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+# target_metadata is the MetaData object for 'autogenerate' support
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -37,12 +66,14 @@ def run_migrations_offline() -> None:
     script output.
 
     """
+    # offline use the URL we stored in config (asyncpg)
     url = config.get_main_option('sqlalchemy.url')
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={'paramstyle': 'named'},
+        as_sql=True,
     )
 
     with context.begin_transaction():
@@ -56,9 +87,16 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix='sqlalchemy.',
+    # Build synchronous psycopg2 URL directly from environment variables for migrations
+    connectable = create_engine(
+        URL.create(
+            drivername='postgresql+psycopg2',
+            username=os.environ['POSTGRES_USER'],
+            password=os.environ['POSTGRES_PASSWORD'],
+            host=os.environ['POSTGRES_HOST'],
+            port=int(os.environ['POSTGRES_PORT']),
+            database=os.environ['POSTGRES_DB'],
+        ),
         poolclass=pool.NullPool,
     )
 
