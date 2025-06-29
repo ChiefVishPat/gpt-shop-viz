@@ -1,9 +1,8 @@
 from typing import AsyncGenerator, List
 
 from fastapi import Depends, FastAPI, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import crud, schemas
 from app.db import AsyncSessionLocal
@@ -12,10 +11,10 @@ from scraper.openai_client import fetch_shopping_items
 app = FastAPI(title='gpt-shop-viz')
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=['*'],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 
