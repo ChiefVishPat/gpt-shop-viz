@@ -13,6 +13,19 @@ from app.schemas import (
 )
 
 
+async def get_or_create_product(db: AsyncSession, name: str, prompt: str) -> Product:
+    q = await db.execute(select(Product).where(Product.prompt == prompt))
+    prod = q.scalar_one_or_none()
+    if prod:
+        return prod
+
+    prod = Product(name=name, prompt=prompt)
+    db.add(prod)
+    await db.commit()
+    await db.refresh(prod)
+    return prod
+
+
 async def create_product(db: AsyncSession, product_in: ProductCreate) -> ProductRead:
     db_obj = Product(**product_in.model_dump())
     db.add(db_obj)
@@ -32,10 +45,10 @@ async def get_product(db: AsyncSession, product_id: int) -> ProductRead | None:
     return ProductRead.model_validate(prod) if prod else None
 
 
-async def create_snapshot(db: AsyncSession, snap_in: SnapshotCreate) -> SnapshotRead:
-    db_obj = Snapshot(**snap_in.model_dump())
+async def create_snapshot(db: AsyncSession, snapshot: SnapshotCreate) -> SnapshotRead:
+    db_obj = Snapshot(**snapshot.model_dump())
     db.add(db_obj)
-    await db.commit()
+    await db.flush()
     await db.refresh(db_obj)
     return SnapshotRead.model_validate(db_obj)
 
@@ -53,13 +66,13 @@ async def get_latest_snapshot(db: AsyncSession, product_id: int) -> SnapshotRead
 
 
 async def get_snapshot_history(db: AsyncSession, product_id: int, days: int) -> List[SnapshotRead]:
+    interval_literal = text(f"interval '{days} days'")
     stmt = (
         select(Snapshot)
         .where(
             Snapshot.product_id == product_id,
-            Snapshot.captured_at >= func.now() - text('interval :interval_str'),
+            Snapshot.captured_at >= func.now() - interval_literal,
         )
-        .params(interval_str=f'{days} days')
         .order_by(Snapshot.captured_at)
     )
     result = await db.execute(stmt)

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy import (
+    JSON,
     TIMESTAMP,
     ForeignKey,
     Integer,
@@ -38,10 +39,9 @@ class Snapshot(Base):
     product_id: Mapped[int] = mapped_column(
         ForeignKey('products.id', ondelete='CASCADE'), nullable=False
     )
-    rank: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
-    url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    urls: Mapped[list[str]] = mapped_column(JSON, nullable=True)
     captured_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,

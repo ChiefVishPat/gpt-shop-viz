@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -9,18 +10,16 @@ from sqlalchemy.ext.asyncio import (
 )
 
 load_dotenv()
-# build SQLALCHEMY_DATABASE_URL from POSTGRES_* vars if necessary to expand placeholders
-if all(
-    k in os.environ
-    for k in ('POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_HOST', 'POSTGRES_PORT', 'POSTGRES_DB')
-):
-    os.environ['SQLALCHEMY_DATABASE_URL'] = (
-        f'postgresql+asyncpg://{os.environ["POSTGRES_USER"]}:{os.environ["POSTGRES_PASSWORD"]}'
-        f'@{os.environ["POSTGRES_HOST"]}:{os.environ["POSTGRES_PORT"]}/{os.environ["POSTGRES_DB"]}'
-    )
-DATABASE_URL: str = os.environ['SQLALCHEMY_DATABASE_URL']
+DATABASE_URL = URL.create(
+    drivername='postgresql+asyncpg',
+    username=os.environ['POSTGRES_USER'],
+    password=os.environ['POSTGRES_PASSWORD'],
+    host=os.environ['POSTGRES_HOST'],
+    port=int(os.environ['POSTGRES_PORT']),
+    database=os.environ['POSTGRES_DB'],
+)
 
-engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=True)
+engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=False)
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,

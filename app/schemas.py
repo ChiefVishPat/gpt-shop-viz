@@ -4,16 +4,15 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ─── Snapshot Schemas ──────────────────────────────────────────────────────
 class SnapshotBase(BaseModel):
     product_id: int
-    rank: int
     title: str
     price: Optional[Decimal] = None
-    url: Optional[str] = None
+    urls: List[str] = Field(default_factory=list)
 
 
 class SnapshotCreate(SnapshotBase):
@@ -49,7 +48,7 @@ class ProductRead(ProductBase):
 
     id: int
     created_at: datetime
-    snapshots: List[SnapshotRead] = []
+    snapshots: List[SnapshotRead] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

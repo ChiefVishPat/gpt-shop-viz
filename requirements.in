@@ -8,3 +8,4 @@ python-dotenv
 alembic
 prometheus-client
 psycopg2-binary
+openai

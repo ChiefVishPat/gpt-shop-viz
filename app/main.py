@@ -1,11 +1,11 @@
 from typing import AsyncGenerator, List
 
-from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import crud, schemas
 from app.db import AsyncSessionLocal
+from scraper.openai_client import fetch_shopping_items
 
 app = FastAPI(title='gpt-shop-viz')
 
@@ -15,8 +15,23 @@ async def health_check() -> dict[str, str]:
     return {'status': 'ok'}
 
 
-# Load environment variables from .env before app startup
-load_dotenv()
+@app.on_event('startup')
+async def _init_db() -> None:
+    # auto-create tables if they do not exist, retry until the database is ready
+    import asyncio
+
+    from app.db import init_models
+
+    retries = 5
+    while True:
+        try:
+            await init_models()
+            break
+        except Exception:
+            retries -= 1
+            if not retries:
+                raise
+            await asyncio.sleep(2)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -34,7 +49,18 @@ db_dep = Depends(get_db)
 async def create_product(
     product_in: schemas.ProductCreate, db: AsyncSession = db_dep
 ) -> schemas.ProductRead:
-    return await crud.create_product(db, product_in)
+    # create product entry and bootstrap initial snapshots via OpenAI
+    product = await crud.create_product(db, product_in)
+    items = await fetch_shopping_items(product.prompt or product.name)
+    for item in items:
+        snap_in = schemas.SnapshotCreate(
+            product_id=product.id,
+            title=item['title'],
+            price=item.get('price'),
+            urls=item.get('urls', []),
+        )
+        await crud.create_snapshot(db, snap_in)
+    return product
 
 
 @app.get('/products', response_model=List[schemas.ProductRead])
