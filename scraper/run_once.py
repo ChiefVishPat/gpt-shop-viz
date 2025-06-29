@@ -56,6 +56,8 @@ async def main(prompt: str, no_db: bool) -> None:
             snap = await crud.create_snapshot(db, snap_in)
             print(f'✅ Saved snapshot {snap.id} (rank {idx})')
 
+        await db.commit()
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for scraper."""
