@@ -3,11 +3,20 @@ from typing import AsyncGenerator, List
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from fastapi.middleware.cors import CORSMiddleware
+
 from app import crud, schemas
 from app.db import AsyncSessionLocal
 from scraper.openai_client import fetch_shopping_items
 
 app = FastAPI(title='gpt-shop-viz')
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get('/health', tags=['health'])
@@ -68,6 +77,18 @@ async def list_products(
     db: AsyncSession = db_dep,
 ) -> List[schemas.ProductRead]:
     return await crud.get_products(db)
+
+
+@app.get('/products/{product_id}', response_model=schemas.ProductRead)
+async def read_product(
+    product_id: int,
+    db: AsyncSession = db_dep,
+) -> schemas.ProductRead:
+    """Get a single product and all its snapshots."""
+    prod = await crud.get_product(db, product_id)
+    if not prod:
+        raise HTTPException(status_code=404, detail='Product not found')
+    return prod
 
 
 @app.post('/snapshot', response_model=schemas.SnapshotRead)

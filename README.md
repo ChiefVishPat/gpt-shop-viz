@@ -43,8 +43,14 @@ both history and real-time views via a FastAPI REST API.
 
 5. Explore the API (on port 8000):
    ```bash
-   curl http://localhost:8000/health
+  
+   curl -X 'GET' \
+  'http://localhost:8000/health' \
+  -H 'accept: application/json'
+
+
    curl http://localhost:8000/products
+   curl http://localhost:8000/products/{product_id}
    curl http://localhost:8000/products/{product_id}/latest
    curl http://localhost:8000/products/{product_id}/history?days=7
    ```
