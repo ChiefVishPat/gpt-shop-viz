@@ -18,7 +18,8 @@ class SnapshotBase(BaseModel):
 class SnapshotCreate(SnapshotBase):
     """Fields required to create a snapshot."""
 
-    pass
+    # Optional timestamp for when the snapshot was captured. If not provided, defaults to now.
+    captured_at: Optional[datetime] = None
 
 
 class SnapshotRead(SnapshotBase):

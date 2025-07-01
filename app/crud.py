@@ -60,7 +60,8 @@ async def get_product(db: AsyncSession, product_id: int) -> ProductRead | None:
 
 
 async def create_snapshot(db: AsyncSession, snapshot: SnapshotCreate) -> SnapshotRead:
-    db_obj = Snapshot(**snapshot.model_dump())
+    # Exclude None values to allow database default for captured_at when not specified.
+    db_obj = Snapshot(**snapshot.model_dump(exclude_none=True))
     db.add(db_obj)
     # commit immediately so it's visible in the DB
     await db.commit()
@@ -113,12 +114,14 @@ async def get_lowest_price_period(
     Return the snapshot with the lowest price for product_id between start and end datetimes.
     If start is None, no lower bound is applied. If end is None, no upper bound is applied.
     """
-    stmt = select(Snapshot).where(Snapshot.product_id == product_id)
+    stmt = (
+        select(Snapshot).where(Snapshot.product_id == product_id).where(Snapshot.price.is_not(None))
+    )
     if start is not None:
         stmt = stmt.where(Snapshot.captured_at >= start)
     if end is not None:
         stmt = stmt.where(Snapshot.captured_at <= end)
-    stmt = stmt.order_by(Snapshot.price.asc()).limit(1)
+    stmt = stmt.order_by(Snapshot.price.asc(), Snapshot.captured_at.asc()).limit(1)
 
     result = await db.execute(stmt)
     snap = result.scalar_one_or_none()

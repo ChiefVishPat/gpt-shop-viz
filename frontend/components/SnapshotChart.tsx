@@ -10,11 +10,11 @@ import {
 } from 'recharts'
 
 export default function SnapshotChart({ data }: { data: SnapshotRead[] }) {
+  // Prepare chart data in chronological order (oldest → newest)
   const chartData = data
     .slice()
-    .reverse()
     .map((s) => ({
-      date: new Date(s.captured_at).toLocaleString(),
+      date: new Date(s.captured_at).toISOString().slice(0, 10),
       price: s.price ?? 0,
     }))
 
@@ -32,13 +32,17 @@ export default function SnapshotChart({ data }: { data: SnapshotRead[] }) {
         >
           <XAxis
             dataKey="date"
+            type="category"
             tick={{ fill: '#ccc' }}
             interval={0}
             angle={-45}
             textAnchor="end"
           />
           <YAxis
+            type="number"
+            dataKey="price"
             tick={{ fill: '#ccc' }}
+            tickFormatter={(v) => `$${v}`}
             domain={[dataMin - padding, dataMax + padding]}
           />
           <Tooltip
