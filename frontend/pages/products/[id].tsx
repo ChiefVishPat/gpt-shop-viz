@@ -1,22 +1,16 @@
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import useSWR from 'swr'
-import { useState, useEffect } from 'react'
 import SnapshotChart from '@/components/SnapshotChart'
 import SnapshotTable from '@/components/SnapshotTable'
-
-interface Snapshot {
-  id: number
-  title: string
-  price: number
-  urls: string[]
-  captured_at: string
-}
+import BestPriceForm from '@/components/BestPriceForm'
+import { getBestPrice, SnapshotRead, UrlPrice } from '@/utils/api'
 
 interface ProductDetail {
   id: number
   name: string
-  snapshots: Snapshot[]
+  snapshots: SnapshotRead[]
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -30,8 +24,13 @@ export default function ProductPage() {
   const [viewMode, setViewMode] = useState<'realtime' | 'history'>('realtime')
   const [loadingSnapshots, setLoadingSnapshots] = useState(false)
   const [snapshotError, setSnapshotError] = useState<string | null>(null)
-  const [latestSnapshot, setLatestSnapshot] = useState<Snapshot | null>(null)
-  const [historySnapshots, setHistorySnapshots] = useState<Snapshot[]>([])
+  const [latestSnapshots, setLatestSnapshots] = useState<SnapshotRead[]>([])
+  const [historySnapshots, setHistorySnapshots] = useState<SnapshotRead[]>([])
+
+  // Best price state
+  const [bestPrice, setBestPrice] = useState<SnapshotRead | null>(null)
+  const [bestError, setBestError] = useState<string | null>(null)
+  const [bestLoading, setBestLoading] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -48,19 +47,19 @@ export default function ProductPage() {
       })
       .then((data) => {
         if (viewMode === 'realtime') {
-          setLatestSnapshot(data)
+          setLatestSnapshots(data)
         } else {
           setHistorySnapshots(data)
         }
       })
       .catch((err: any) => setSnapshotError(err.message || 'Error loading snapshots'))
       .finally(() => setLoadingSnapshots(false))
-  }, [id, viewMode])
+  }, [id, viewMode]);
 
   const { data, error } = useSWR<ProductDetail>(
     id ? `${API_BASE}/products/${id}` : null,
     fetcher
-  )
+  );
 
   if (error) return <div className="p-6">Error loading product.</div>
   if (!data) return <div className="p-6">Loading...</div>
@@ -100,38 +99,96 @@ export default function ProductPage() {
         {loadingSnapshots && <div>Loading {viewMode}...</div>}
         {snapshotError && <div className="text-red-400">{snapshotError}</div>}
 
-        {/* Real-time: single latest snapshot */}
-        {!loadingSnapshots && !snapshotError && viewMode === 'realtime' && latestSnapshot && (
+        {/* Real-time: latest snapshots */}
+        {!loadingSnapshots && !snapshotError && viewMode === 'realtime' && latestSnapshots.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xl">Latest Snapshot</h2>
-            <p>Title: {latestSnapshot.title}</p>
-            <p>Price: ${latestSnapshot.price}</p>
-            <p className="flex flex-wrap gap-2">
-              Links:
-              {latestSnapshot.urls.map((url) => (
-                <a
-                  key={url}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:underline"
-                >
-                  {url}
-                </a>
+            <h2 className="text-xl mb-2">Latest Snapshots</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {latestSnapshots.map((s) => (
+                <div key={s.id} className="bg-gray-800 p-4 rounded-lg shadow">
+                  <h3 className="font-semibold">{s.title}</h3>
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {s.urls.map((entry) => {
+                      const url = typeof entry === 'string' ? entry : entry.url
+                      const price = typeof entry === 'string' ? s.price : entry.price
+                      return (
+                        <li key={url} className="flex items-center space-x-2">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:underline"
+                          >
+                            {url}
+                          </a>
+                          <span className="text-gray-400">${price}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
               ))}
-            </p>
+            </div>
           </div>
         )}
 
-        {/* History: chart + table of past snapshots */}
+        {/* Best Price Section */}
+        <div className="mb-6">
+          <h2 className="text-xl mb-2">Best Price</h2>
+          <BestPriceForm
+            onFetch={async (start, end) => {
+              setBestError(null)
+              setBestLoading(true)
+              try {
+                const snap = await getBestPrice(Number(id), start, end)
+                setBestPrice(snap)
+              } catch (err: any) {
+                setBestError(err.message || 'Error fetching best price')
+              } finally {
+                setBestLoading(false)
+              }
+            }}
+          />
+          {bestLoading && <div>Loading best price…</div>}
+          {bestError && <div className="text-red-400">{bestError}</div>}
+          {bestPrice && (
+            <div className="bg-gray-800 p-4 rounded-lg shadow mt-4">
+              <p>Title: {bestPrice.title}</p>
+              <p>Price: ${bestPrice.price}</p>
+              <p>Date: {new Date(bestPrice.captured_at).toLocaleString()}</p>
+              <ul className="mt-2 flex flex-col gap-1">
+                {bestPrice.urls.map((entry) => {
+                  const url = typeof entry === 'string' ? entry : entry.url
+                  const price = typeof entry === 'string' ? bestPrice.price : entry.price
+                  return (
+                    <li key={url} className="flex items-center space-x-2">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline"
+                      >
+                        {url}
+                      </a>
+                      <span className="text-gray-400">${price}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* History: chart + combined snapshot cards */}
         {!loadingSnapshots && !snapshotError && viewMode === 'history' && (
           <>
             <div className="mb-6">
               <h2 className="text-xl mb-2">Price History (last 30 days)</h2>
               <SnapshotChart data={historySnapshots} />
             </div>
+
             <div>
-              <h2 className="text-xl mb-2">All Snapshots</h2>
+              <h2 className="text-xl mb-2">Snapshot History</h2>
               <SnapshotTable data={historySnapshots} />
             </div>
           </>

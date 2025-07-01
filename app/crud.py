@@ -1,4 +1,5 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
 from sqlalchemy import func, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,15 +68,26 @@ async def create_snapshot(db: AsyncSession, snapshot: SnapshotCreate) -> Snapsho
     return SnapshotRead.model_validate(db_obj)
 
 
-async def get_latest_snapshot(db: AsyncSession, product_id: int) -> SnapshotRead | None:
-    result = await db.execute(
-        select(Snapshot)
-        .where(Snapshot.product_id == product_id)
-        .order_by(Snapshot.captured_at.desc())
-        .limit(1)
+async def get_latest_snapshots(db: AsyncSession, product_id: int) -> list[SnapshotRead]:
+    """
+    Return all snapshots for product_id having the most recent timestamp.
+    """
+    # find the most recent capture time for this product
+    max_ts_res = await db.execute(
+        select(func.max(Snapshot.captured_at)).where(Snapshot.product_id == product_id)
     )
-    snap = result.scalar_one_or_none()
-    return SnapshotRead.model_validate(snap) if snap else None
+    max_ts = max_ts_res.scalar_one_or_none()
+    if not max_ts:
+        return []
+
+    # fetch all snapshots at that timestamp
+    result = await db.execute(
+        select(Snapshot).where(
+            Snapshot.product_id == product_id,
+            Snapshot.captured_at == max_ts,
+        )
+    )
+    return [SnapshotRead.model_validate(s) for s in result.scalars().all()]
 
 
 async def get_snapshot_history(db: AsyncSession, product_id: int, days: int) -> List[SnapshotRead]:
@@ -89,3 +101,25 @@ async def get_snapshot_history(db: AsyncSession, product_id: int, days: int) -> 
         .order_by(Snapshot.captured_at)
     )
     return [SnapshotRead.model_validate(s) for s in result.scalars().all()]
+
+
+async def get_lowest_price_period(
+    db: AsyncSession,
+    product_id: int,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+) -> SnapshotRead | None:
+    """
+    Return the snapshot with the lowest price for product_id between start and end datetimes.
+    If start is None, no lower bound is applied. If end is None, no upper bound is applied.
+    """
+    stmt = select(Snapshot).where(Snapshot.product_id == product_id)
+    if start is not None:
+        stmt = stmt.where(Snapshot.captured_at >= start)
+    if end is not None:
+        stmt = stmt.where(Snapshot.captured_at <= end)
+    stmt = stmt.order_by(Snapshot.price.asc()).limit(1)
+
+    result = await db.execute(stmt)
+    snap = result.scalar_one_or_none()
+    return SnapshotRead.model_validate(snap) if snap else None

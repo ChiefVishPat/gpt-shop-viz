@@ -8,12 +8,21 @@ export interface ProductCreate {
   prompt: string
 }
 
+export interface UrlPrice {
+  url: string
+  price: number | null
+}
+
 export interface SnapshotRead {
   id: number
   product_id: number
   title: string
   price: number | null
-  urls: string[]
+  /**
+   * Snapshot URLs. Backend returns a list of string URLs,
+   * but best-price endpoint wraps them as UrlPrice objects.
+   */
+  urls: Array<string | UrlPrice>
   captured_at: string
 }
 
@@ -63,4 +72,45 @@ export function useCreateProduct() {
   }
 
   return { mutateAsync, isLoading }
+}
+
+/**
+ * Fetch the lowest-price snapshot for a product within an optional date range.
+ * Dates should be ISO strings (YYYY-MM-DD).
+ */
+interface RawSnapshot {
+  id: number
+  product_id: number
+  title: string
+  price: number | null
+  urls: string[]
+  captured_at: string
+}
+
+/**
+ * Fetch the lowest-price snapshot for a product between start and end dates.
+ */
+export async function getBestPrice(
+  productId: number,
+  start?: string,
+  end?: string
+): Promise<SnapshotRead> {
+  const params = new URLSearchParams()
+  if (start) params.append('start', start)
+  if (end) params.append('end', end)
+  const res = await fetch(
+    `${API_BASE}/products/${productId}/best${params.toString() ? '?' + params.toString() : ''}`
+  )
+  if (!res.ok) {
+    throw new Error(`Error fetching best price: ${res.statusText}`)
+  }
+  const raw = (await res.json()) as RawSnapshot
+  return {
+    id: raw.id,
+    product_id: raw.product_id,
+    title: raw.title,
+    price: raw.price,
+    urls: raw.urls.map((url) => ({ url, price: raw.price ?? 0 })),
+    captured_at: raw.captured_at,
+  }
 }

@@ -1,6 +1,7 @@
-from typing import AsyncGenerator, List
+from datetime import date, datetime, time, timezone
+from typing import AsyncGenerator, List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,10 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+
+# Use module-level constants for Query defaults to satisfy lint rules (B008)
+_DEFAULT_DATE_QUERY = Query(None)
 
 
 @app.get('/health', tags=['health'])
@@ -101,12 +106,18 @@ async def create_snapshot(
     return await crud.create_snapshot(db, snap_in)
 
 
-@app.get('/products/{product_id}/latest', response_model=schemas.SnapshotRead)
-async def latest_snapshot(product_id: int, db: AsyncSession = db_dep) -> schemas.SnapshotRead:
-    snap = await crud.get_latest_snapshot(db, product_id)
-    if not snap:
+@app.get('/products/{product_id}/latest', response_model=List[schemas.SnapshotRead])
+async def latest_snapshots(
+    product_id: int,
+    db: AsyncSession = db_dep,
+) -> List[schemas.SnapshotRead]:
+    """
+    Get all snapshots for a product at the most recent capture time.
+    """
+    snaps = await crud.get_latest_snapshots(db, product_id)
+    if not snaps:
         raise HTTPException(status_code=404, detail='Snapshot not found')
-    return snap
+    return snaps
 
 
 @app.get('/products/{product_id}/history', response_model=List[schemas.SnapshotRead])
@@ -114,3 +125,26 @@ async def snapshot_history(
     product_id: int, days: int = 7, db: AsyncSession = db_dep
 ) -> List[schemas.SnapshotRead]:
     return await crud.get_snapshot_history(db, product_id, days)
+
+
+@app.get('/products/{product_id}/best', response_model=schemas.SnapshotRead)
+async def best_price(
+    product_id: int,
+    start: Optional[date] = _DEFAULT_DATE_QUERY,
+    end: Optional[date] = _DEFAULT_DATE_QUERY,
+    db: AsyncSession = db_dep,
+) -> schemas.SnapshotRead:
+    """
+    Get the snapshot with the lowest price for a product between start and end dates.
+    Dates are interpreted in UTC (start at 00:00:00, end at 23:59:59 UTC).
+    """
+    start_dt = datetime.combine(start, time.min).replace(tzinfo=timezone.utc) if start else None
+    end_dt = (
+        datetime.combine(end, time.max).replace(tzinfo=timezone.utc)
+        if end
+        else datetime.now(timezone.utc)
+    )
+    snap = await crud.get_lowest_price_period(db, product_id, start_dt, end_dt)
+    if not snap:
+        raise HTTPException(status_code=404, detail='No snapshots found for the given period')
+    return snap

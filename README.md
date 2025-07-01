@@ -41,19 +41,7 @@ both history and real-time views via a FastAPI REST API.
    docker-compose exec scraper python -m scraper.run_once -p "Show me headsets under $150 for PS5"
    ```
 
-5. Explore the API (on port 8000):
-   ```bash
-  
-   curl -X 'GET' \
-  'http://localhost:8000/health' \
-  -H 'accept: application/json'
-
-
-   curl http://localhost:8000/products
-   curl http://localhost:8000/products/{product_id}
-   curl http://localhost:8000/products/{product_id}/latest
-   curl http://localhost:8000/products/{product_id}/history?days=7
-   ```
+5. Explore the interactive API docs at http://localhost:8000/docs
 
 ## Local Development
 

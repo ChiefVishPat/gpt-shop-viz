@@ -1,4 +1,5 @@
 import React from 'react'
+import { SnapshotRead } from '@/utils/api'
 import {
   LineChart,
   Line,
@@ -8,39 +9,52 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-interface Snapshot {
-  id: number
-  title: string
-  price: number
-  captured_at: string
-}
-
-export default function SnapshotChart({ data }: { data: Snapshot[] }) {
+export default function SnapshotChart({ data }: { data: SnapshotRead[] }) {
   const chartData = data
     .slice()
     .reverse()
     .map((s) => ({
       date: new Date(s.captured_at).toLocaleString(),
-      price: s.price,
+      price: s.price ?? 0,
     }))
+
+  const prices = chartData.map((d) => d.price)
+  const dataMin = prices.length > 0 ? Math.min(...prices) : 0
+  const dataMax = prices.length > 0 ? Math.max(...prices) : 0
+  const padding = (dataMax - dataMin) * 0.1 || 5
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData}>
-        <XAxis dataKey="date" tick={{ fill: '#ccc' }} />
-        <YAxis tick={{ fill: '#ccc' }} />
-        <Tooltip
-          formatter={(value: any) => [`$${value}`, 'Price']}
-          labelStyle={{ color: '#fff' }}
-          contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
-        />
-        <Line
-          type="monotone"
-          dataKey="price"
-          stroke="#8884d8"
-          strokeWidth={2}
-          dot={false}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div style={{ height: 300, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={chartData}
+          margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+        >
+          <XAxis
+            dataKey="date"
+            tick={{ fill: '#ccc' }}
+            interval={0}
+            angle={-45}
+            textAnchor="end"
+          />
+          <YAxis
+            tick={{ fill: '#ccc' }}
+            domain={[dataMin - padding, dataMax + padding]}
+          />
+          <Tooltip
+            formatter={(value: any) => [`$${value}`, 'Price']}
+            labelStyle={{ color: '#fff' }}
+            contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
+          />
+          <Line
+            type="monotone"
+            dataKey="price"
+            stroke="#8884d8"
+            strokeWidth={2}
+            dot={{ r: 4 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }

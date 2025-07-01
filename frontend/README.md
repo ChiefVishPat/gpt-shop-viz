@@ -30,3 +30,8 @@ Build and run the production image:
 docker build -t gpt-shop-viz-frontend .
 docker run -p 3000:3000 gpt-shop-viz-frontend
 ```
+
+## Best Price Feature
+
+On each product’s detail page (click **View** on the dashboard), you’ll find a **Best Price** section under the latest snapshot.
+Select a start and/or end date and click **Fetch Best Price** to see the lowest‐price snapshot in that range.
