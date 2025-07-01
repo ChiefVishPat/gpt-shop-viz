@@ -1,14 +1,14 @@
 import pytest
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import StaticPool
 
 from app.models import Base
 import app.db as app_db
 from app.main import app as fastapi_app
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 async def engine():
     """
     Create a fresh in-memory SQLite database for the test session.
@@ -19,7 +19,12 @@ async def engine():
     except ImportError:
         pytest.skip('aiosqlite is required for database tests')
     url = 'sqlite+aiosqlite:///:memory:'
-    engine = create_async_engine(url, poolclass=NullPool, future=True)
+    engine = create_async_engine(
+        url,
+        connect_args={'check_same_thread': False},
+        poolclass=StaticPool,
+        future=True,
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -56,9 +61,10 @@ def override_db(monkeypatch, db_session):
 @pytest.fixture
 async def client():
     """
-    Async HTTP client for testing FastAPI endpoints.
+    Async HTTP client for testing FastAPI endpoints using ASGI transport.
     """
-    from httpx import AsyncClient
+    import httpx
 
-    async with AsyncClient(app=fastapi_app, base_url='http://test') as ac:
+    transport = httpx.ASGITransport(app=fastapi_app)
+    async with httpx.AsyncClient(transport=transport, base_url='http://test') as ac:
         yield ac

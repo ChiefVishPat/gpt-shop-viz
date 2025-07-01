@@ -14,7 +14,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     Text,
-    text,
+    func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -35,7 +35,7 @@ class Product(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
-        server_default=text('NOW()'),
+        server_default=func.now(),
     )
     snapshots: Mapped[List['Snapshot']] = relationship(
         'Snapshot', back_populates='product', cascade='all, delete-orphan'
@@ -59,6 +59,6 @@ class Snapshot(Base):
     captured_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
-        server_default=text('NOW()'),
+        server_default=func.now(),
     )
     product: Mapped['Product'] = relationship('Product', back_populates='snapshots')

@@ -4,7 +4,7 @@ from app.main import fetch_shopping_items, app as fastapi_app
 
 
 @pytest.mark.asyncio
-async def test_health_endpoint(client, override_db):
+async def test_health_endpoint(client):
     res = await client.get('/health')
     assert res.status_code == 200
     assert res.json() == {'status': 'ok'}
@@ -53,4 +53,5 @@ async def test_product_lifecycle(client, monkeypatch, override_db):
     # Best price (should pick price=10)
     r6 = await client.get(f'/products/{pid}/best')
     assert r6.status_code == 200
-    assert r6.json()['price'] == 10
+    # JSON serializes Decimal as string, so compare numerically
+    assert float(r6.json()['price']) == 10.0

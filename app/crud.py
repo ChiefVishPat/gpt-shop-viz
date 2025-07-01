@@ -114,22 +114,22 @@ async def get_latest_snapshots(db: AsyncSession, product_id: int) -> list[Snapsh
     """
     Return all snapshots for product_id having the most recent timestamp.
     """
-    # find the most recent capture time for this product
-    max_ts_res = await db.execute(
-        select(func.max(Snapshot.captured_at)).where(Snapshot.product_id == product_id)
-    )
-    max_ts = max_ts_res.scalar_one_or_none()
-    if not max_ts:
-        return []
+    """
+    Return the most recent snapshot for a product (by timestamp).
 
-    # fetch all snapshots at that timestamp
-    result = await db.execute(
-        select(Snapshot).where(
-            Snapshot.product_id == product_id,
-            Snapshot.captured_at == max_ts,
-        )
+    :param db: Async database session
+    :param product_id: ID of the product to query
+    :return: List with a single SnapshotRead schema for the latest snapshot, or empty if none
+    """
+    stmt = (
+        select(Snapshot)
+        .where(Snapshot.product_id == product_id)
+        .order_by(Snapshot.captured_at.desc())
+        .limit(1)
     )
-    return [SnapshotRead.model_validate(s) for s in result.scalars().all()]
+    result = await db.execute(stmt)
+    snap = result.scalar_one_or_none()
+    return [SnapshotRead.model_validate(snap)] if snap else []
 
 
 async def get_snapshot_history(db: AsyncSession, product_id: int, days: int) -> List[SnapshotRead]:
@@ -141,12 +141,22 @@ async def get_snapshot_history(db: AsyncSession, product_id: int, days: int) -> 
     :param days: Number of days to look back from now
     :return: List of SnapshotRead schemas ordered by captured_at
     """
-    interval_str = text(f"interval '{days} days'")
+    """
+    Return list of snapshots for a product over the past N days.
+
+    :param db: Async database session
+    :param product_id: ID of the product to query
+    :param days: Number of days to look back from now
+    :return: List of SnapshotRead schemas ordered by captured_at
+    """
+    from datetime import datetime, timezone, timedelta
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     result = await db.execute(
         select(Snapshot)
         .where(
             Snapshot.product_id == product_id,
-            Snapshot.captured_at >= func.now() - interval_str,
+            Snapshot.captured_at >= cutoff,
         )
         .order_by(Snapshot.captured_at)
     )
