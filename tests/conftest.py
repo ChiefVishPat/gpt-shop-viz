@@ -1,0 +1,59 @@
+import pytest
+
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
+
+from app.models import Base
+import app.db as app_db
+from app.main import app as fastapi_app
+
+
+@pytest.fixture(scope='session')
+async def engine():
+    """
+    Create a fresh in-memory SQLite database for the test session.
+    """
+    url = 'sqlite+aiosqlite:///:memory:'
+    engine = create_async_engine(url, poolclass=NullPool, future=True)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield engine
+    await engine.dispose()
+
+
+@pytest.fixture
+async def db_session(engine):
+    """
+    Provide a transactional session for a test, rolling back at the end.
+    """
+    maker = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    async with maker() as session:
+        yield session
+        await session.rollback()
+
+
+@pytest.fixture(autouse=True)
+def override_db(monkeypatch, db_session):
+    """
+    Override the database dependency and session maker to use the test DB.
+    """
+    # Patch AsyncSessionLocal to return our test session
+    monkeypatch.setattr(app_db, 'AsyncSessionLocal', lambda: db_session)
+    # Override FastAPI dependency
+    import app.main as app_main
+
+    async def _get_test_db():
+        yield db_session
+
+    app_main.app.dependency_overrides[app_main.get_db] = _get_test_db
+
+
+@pytest.fixture
+async def client():
+    """
+    Async HTTP client for testing FastAPI endpoints.
+    """
+    from httpx import AsyncClient
+
+    async with AsyncClient(app=fastapi_app, base_url='http://test') as ac:
+        yield ac
