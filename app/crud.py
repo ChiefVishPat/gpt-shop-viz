@@ -112,6 +112,7 @@ async def get_lowest_price_period(
 ) -> SnapshotRead | None:
     """
     Return the snapshot with the lowest price for product_id between start and end datetimes.
+    If multiple snapshots share the same lowest price, return the most recent one.
     If start is None, no lower bound is applied. If end is None, no upper bound is applied.
     """
     stmt = (
@@ -121,7 +122,7 @@ async def get_lowest_price_period(
         stmt = stmt.where(Snapshot.captured_at >= start)
     if end is not None:
         stmt = stmt.where(Snapshot.captured_at <= end)
-    stmt = stmt.order_by(Snapshot.price.asc(), Snapshot.captured_at.asc()).limit(1)
+    stmt = stmt.order_by(Snapshot.price.asc(), Snapshot.captured_at.desc()).limit(1)
 
     result = await db.execute(stmt)
     snap = result.scalar_one_or_none()

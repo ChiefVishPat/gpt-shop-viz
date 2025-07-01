@@ -137,6 +137,7 @@ async def best_price(
     """
     Get the snapshot with the lowest price for a product between start and end dates.
     Dates are interpreted in UTC (start at 00:00:00, end at 23:59:59 UTC).
+    If multiple snapshots share the same lowest price, returns the most recent one.
     """
     start_dt = datetime.combine(start, time.min).replace(tzinfo=timezone.utc) if start else None
     end_dt = (
