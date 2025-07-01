@@ -12,7 +12,12 @@ from app.main import app as fastapi_app
 async def engine():
     """
     Create a fresh in-memory SQLite database for the test session.
+    Requires the 'aiosqlite' package to be installed.
     """
+    try:
+        import aiosqlite  # noqa: F401
+    except ImportError:
+        pytest.skip('aiosqlite is required for database tests')
     url = 'sqlite+aiosqlite:///:memory:'
     engine = create_async_engine(url, poolclass=NullPool, future=True)
     async with engine.begin() as conn:
@@ -32,7 +37,7 @@ async def db_session(engine):
         await session.rollback()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def override_db(monkeypatch, db_session):
     """
     Override the database dependency and session maker to use the test DB.

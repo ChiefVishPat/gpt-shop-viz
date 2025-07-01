@@ -4,14 +4,14 @@ from app.main import fetch_shopping_items, app as fastapi_app
 
 
 @pytest.mark.asyncio
-async def test_health_endpoint(client):
+async def test_health_endpoint(client, override_db):
     res = await client.get('/health')
     assert res.status_code == 200
     assert res.json() == {'status': 'ok'}
 
 
 @pytest.mark.asyncio
-async def test_product_lifecycle(client, monkeypatch):
+async def test_product_lifecycle(client, monkeypatch, override_db):
     # Stub out OpenAI fetch to return predictable items
     fake_items = [
         {'title': 'A', 'price': 10, 'urls': ['u1']},

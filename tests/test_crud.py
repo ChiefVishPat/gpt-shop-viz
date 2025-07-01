@@ -6,7 +6,7 @@ from app import crud, schemas
 
 
 @pytest.mark.asyncio
-async def test_crud_product_and_snapshot(db_session):
+async def test_crud_product_and_snapshot(db_session, override_db):
     # No products initially
     products = await crud.get_products(db_session)
     assert products == []
