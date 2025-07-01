@@ -16,7 +16,29 @@ from app import crud, schemas
 from app.db import AsyncSessionLocal
 from scraper.openai_client import fetch_shopping_items
 
-app = FastAPI(title='gpt-shop-viz')
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # auto-create tables if they do not exist, retry until the database is ready
+    import asyncio
+
+    from app.db import init_models
+
+    retries = 5
+    while True:
+        try:
+            await init_models()
+            break
+        except Exception:
+            retries -= 1
+            if not retries:
+                raise
+            await asyncio.sleep(2)
+    yield
+
+app = FastAPI(title='gpt-shop-viz', lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
@@ -35,23 +57,7 @@ async def health_check() -> dict[str, str]:
     return {'status': 'ok'}
 
 
-@app.on_event('startup')
-async def _init_db() -> None:
-    # auto-create tables if they do not exist, retry until the database is ready
-    import asyncio
-
-    from app.db import init_models
-
-    retries = 5
-    while True:
-        try:
-            await init_models()
-            break
-        except Exception:
-            retries -= 1
-            if not retries:
-                raise
-            await asyncio.sleep(2)
+# The database initialization has been moved into the lifespan context above.
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

@@ -40,4 +40,5 @@ async def init_models() -> None:
     from app.models import Base
 
     async with engine.begin() as conn:
+        # Create database tables based on ORM metadata if not using Alembic
         await conn.run_sync(Base.metadata.create_all)

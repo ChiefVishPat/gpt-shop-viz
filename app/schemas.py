@@ -10,7 +10,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ─── Snapshot Schemas ──────────────────────────────────────────────────────
@@ -34,8 +34,7 @@ class SnapshotRead(SnapshotBase):
     id: int
     captured_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ─── Product Schemas ───────────────────────────────────────────────────────
@@ -57,5 +56,4 @@ class ProductRead(ProductBase):
     created_at: datetime
     snapshots: List[SnapshotRead] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
