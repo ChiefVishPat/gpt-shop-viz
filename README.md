@@ -49,6 +49,7 @@ Alternatively, to run locally without Docker:
 
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 cp .env.example .env
 alembic upgrade head
 python -m scraper.run_once -p "Your shopping prompt"
