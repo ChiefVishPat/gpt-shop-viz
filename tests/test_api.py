@@ -1,7 +1,5 @@
 import pytest
 
-from app.main import fetch_shopping_items, app as fastapi_app
-
 
 @pytest.mark.asyncio
 async def test_health_endpoint(client):
@@ -17,11 +15,13 @@ async def test_product_lifecycle(client, monkeypatch, override_db):
         {'title': 'A', 'price': 10, 'urls': ['u1']},
         {'title': 'B', 'price': 20, 'urls': ['u2']},
     ]
+
     async def fake_fetch(prompt):
         return fake_items
 
     # Monkeypatch imported fetch_shopping_items in the FastAPI module
     import app.main as main_mod
+
     monkeypatch.setattr(main_mod, 'fetch_shopping_items', fake_fetch)
 
     # Create a product

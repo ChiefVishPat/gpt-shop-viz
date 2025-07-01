@@ -1,11 +1,10 @@
 import pytest
-
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from app.models import Base
 import app.db as app_db
 from app.main import app as fastapi_app
+from app.models import Base
 
 
 @pytest.fixture

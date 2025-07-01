@@ -5,6 +5,7 @@ Provides endpoints to create and list products, manage snapshots,
 and query snapshot history and best price information.
 """
 
+from contextlib import asynccontextmanager
 from datetime import date, datetime, time, timezone
 from typing import AsyncGenerator, List, Optional
 
@@ -15,8 +16,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import crud, schemas
 from app.db import AsyncSessionLocal
 from scraper.openai_client import fetch_shopping_items
-
-from contextlib import asynccontextmanager
 
 
 @asynccontextmanager
@@ -37,6 +36,7 @@ async def lifespan(app: FastAPI):
                 raise
             await asyncio.sleep(2)
     yield
+
 
 app = FastAPI(title='gpt-shop-viz', lifespan=lifespan)
 app.add_middleware(

@@ -1,7 +1,6 @@
-import json
-import pytest
-
 from unittest.mock import AsyncMock
+
+import pytest
 
 import scraper.openai_client as oc
 

@@ -7,7 +7,6 @@ Provides async functions to create, retrieve, and query products and their snaps
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -149,7 +148,7 @@ async def get_snapshot_history(db: AsyncSession, product_id: int, days: int) -> 
     :param days: Number of days to look back from now
     :return: List of SnapshotRead schemas ordered by captured_at
     """
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     result = await db.execute(
