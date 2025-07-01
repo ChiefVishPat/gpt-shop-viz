@@ -1,3 +1,9 @@
+
+/**
+ * Form component to create a new product with an optional custom prompt.
+ *
+ * On submit, calls the createProduct hook and navigates to the product page.
+ */
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import { useCreateProduct } from '@/utils/api'

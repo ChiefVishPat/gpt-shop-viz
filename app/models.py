@@ -1,3 +1,9 @@
+"""
+Database ORM models for gpt-shop-viz.
+
+Defines Product and Snapshot entities and their relationships.
+"""
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -19,6 +25,10 @@ class Base(DeclarativeBase):
 
 class Product(Base):
     __tablename__ = 'products'
+    """
+    Represents a tracked product, identified by name and optional user prompt.
+    A Product can have multiple associated Snapshots capturing price and URL data over time.
+    """
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -34,6 +44,10 @@ class Product(Base):
 
 class Snapshot(Base):
     __tablename__ = 'snapshots'
+    """
+    Represents a captured snapshot for a product at a specific timestamp.
+    Stores the title, optional price, and list of URLs where the product was found.
+    """
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     product_id: Mapped[int] = mapped_column(

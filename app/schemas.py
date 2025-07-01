@@ -1,3 +1,9 @@
+"""
+Pydantic schemas for gpt-shop-viz API models.
+
+Defines base, create, and read schemas for Product and Snapshot entities.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime

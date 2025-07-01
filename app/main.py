@@ -1,3 +1,10 @@
+"""
+FastAPI REST API for gpt-shop-viz.
+
+Provides endpoints to create and list products, manage snapshots,
+and query snapshot history and best price information.
+"""
+
 from datetime import date, datetime, time, timezone
 from typing import AsyncGenerator, List, Optional
 

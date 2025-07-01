@@ -1,3 +1,8 @@
+/**
+ * Product detail page.
+ *
+ * Displays latest or historical snapshots, price history chart, and best price lookup.
+ */
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'

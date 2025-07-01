@@ -1,3 +1,9 @@
+
+/**
+ * Displays a grid of snapshot cards given a list of snapshots.
+ *
+ * @param data Array of SnapshotRead objects to display.
+ */
 import React from 'react'
 import { SnapshotRead } from '@/utils/api'
 import SnapshotCard from './SnapshotCard'

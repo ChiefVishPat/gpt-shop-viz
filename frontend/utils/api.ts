@@ -1,3 +1,10 @@
+/**
+ * API client and React hooks for gpt-shop-viz frontend.
+ *
+ * Defines TypeScript interfaces for Product and Snapshot schemas,
+ * SWR hooks for fetching data, and helper functions for creating products
+ * and fetching best price snapshots.
+ */
 import useSWR from 'swr'
 import { useState } from 'react'
 
@@ -34,16 +41,34 @@ export interface ProductRead {
   snapshots: SnapshotRead[]
 }
 
+/**
+ * Generic fetcher function for SWR that throws on HTTP errors.
+ *
+ * @param url The resource URL to fetch.
+ * @returns Parsed JSON response.
+ * @throws Error if response status is not OK.
+ */
 export const fetcher = (url: string) =>
   fetch(url).then((res) => {
     if (!res.ok) throw new Error(`Fetch error (${res.status}): ${res.statusText}`)
     return res.json()
   })
 
+/**
+ * SWR hook to fetch all products along with their snapshots.
+ *
+ * @returns SWR response containing ProductRead[] or error/loading state.
+ */
 export function useProducts() {
   return useSWR<ProductRead[]>(`${API_BASE}/products`, fetcher)
 }
 
+/**
+ * SWR hook to fetch a single product by its ID.
+ *
+ * @param id Product ID or undefined. Hook is disabled if id is not set.
+ * @returns SWR response containing ProductRead or error/loading state.
+ */
 export function useProduct(id?: number | string) {
   return useSWR<ProductRead>(
     id ? `${API_BASE}/products/${id}` : null,
@@ -51,9 +76,20 @@ export function useProduct(id?: number | string) {
   )
 }
 
+/**
+ * Hook to create a new product via the API.
+ *
+ * @returns An object with mutateAsync function and isLoading flag.
+ */
 export function useCreateProduct() {
   const [isLoading, setIsLoading] = useState(false)
 
+  /**
+   * Sends a POST request to create a product and returns the created ProductRead.
+   *
+   * @param data ProductCreate payload containing name and prompt.
+   * @returns The created ProductRead object.
+   */
   async function mutateAsync(data: ProductCreate): Promise<ProductRead> {
     setIsLoading(true)
     const res = await fetch(`${API_BASE}/products`, {

@@ -1,3 +1,9 @@
+
+/**
+ * Layout component wrapping all pages with a sidebar and header.
+ *
+ * Renders navigation and main content area.
+ */
 import Link from 'next/link'
 import React from 'react'
 

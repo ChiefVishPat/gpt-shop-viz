@@ -1,3 +1,6 @@
+/**
+ * Home page showing list of products and a form to add new products.
+ */
 import Head from 'next/head'
 import useSWR from 'swr'
 import ProductCard from '@/components/ProductCard'

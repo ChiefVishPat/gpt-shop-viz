@@ -16,6 +16,19 @@ This is the Next.js + TypeScript + Tailwind CSS frontend for the gpt-shop-viz da
    ```bash
    npm install
    ```
+  
+## Directory Structure
+
+```
+frontend/
+├── components   # React components for dashboard UI
+├── pages        # Next.js page routes
+├── styles       # Global CSS and Tailwind styles
+├── utils        # API client hooks and helpers
+├── public       # Static assets
+├── .env.local   # Environment variables for development
+└── ...
+```
 4. Run development server:
    ```bash
    npm run dev

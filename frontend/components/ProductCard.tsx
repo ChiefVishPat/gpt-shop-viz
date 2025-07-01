@@ -1,3 +1,9 @@
+
+/**
+ * Displays a product card with name and creation date, linking to its detail page.
+ *
+ * @param product Object containing id, name, and created_at timestamp.
+ */
 import Link from 'next/link'
 import React from 'react'
 

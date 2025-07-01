@@ -1,3 +1,9 @@
+
+/**
+ * Renders details of a single price snapshot.
+ *
+ * @param snapshot SnapshotRead object containing title, price, URLs, and capture time.
+ */
 import React from 'react'
 import { SnapshotRead } from '@/utils/api'
 

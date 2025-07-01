@@ -1,3 +1,11 @@
+"""
+Database configuration for asynchronous SQLAlchemy.
+
+- Loads environment variables for Postgres connection.
+- Creates AsyncEngine and async_sessionmaker for DB sessions.
+- init_models() can be used to auto-create tables if not using Alembic.
+"""
+
 import os
 
 from dotenv import load_dotenv

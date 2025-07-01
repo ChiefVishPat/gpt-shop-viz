@@ -54,3 +54,49 @@ alembic upgrade head
 python -m scraper.run_once -p "Your shopping prompt"
 uvicorn app.main:app --reload
 ```
+
+## Architecture
+
+gpt-shop-viz consists of three main components:
+
+- **Scraper**: A CLI tool that sends shopping prompts to OpenAI and stores JSON snapshots in Postgres.
+- **API**: A FastAPI service exposing REST endpoints for health checks, listing products, fetching snapshots, history queries, and best price lookups.
+- **Frontend**: A Next.js + TypeScript + Tailwind CSS application displaying dashboards for products and snapshots.
+
+## Project Structure
+
+```
+.
+├── app                 # FastAPI application, CRUD logic, database models & schemas
+├── scraper             # OpenAI-based scraper CLI and client logic
+├── scripts             # Utility scripts for seeding fake history and bulk-loading products
+├── frontend            # Next.js dashboard application
+├── docker-compose.yml  # Orchestration for Postgres, API, and scraper services
+├── alembic             # Database migrations via Alembic
+└── ...
+```
+
+## API Endpoints
+
+| Path                             | Method | Description                                         |
+|----------------------------------|--------|-----------------------------------------------------|
+| `/health`                        | GET    | Health check                                        |
+| `/products`                      | GET    | List all products and their snapshots               |
+| `/products`                      | POST   | Create a new product and perform an initial scrape   |
+| `/products/{product_id}`         | GET    | Get a product and all its snapshots                 |
+| `/snapshot`                      | POST   | Create a snapshot for an existing product           |
+| `/products/{product_id}/latest`  | GET    | Get latest snapshots for a product                  |
+| `/products/{product_id}/history` | GET    | Get snapshot history for a product (default last 7d) |
+| `/products/{product_id}/best`    | GET    | Get the best price snapshot within an optional date range |
+
+## CLI Usage
+
+### Run a one-off scrape
+
+```bash
+python -m scraper.run_once -p "Your shopping prompt"
+```
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

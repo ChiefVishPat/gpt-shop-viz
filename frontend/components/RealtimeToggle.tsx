@@ -1,3 +1,10 @@
+
+/**
+ * Toggle buttons to switch between real-time and history views.
+ *
+ * @param viewMode Current view mode ('realtime' or 'history').
+ * @param onChange Callback to set the view mode.
+ */
 import React from 'react'
 
 interface RealtimeToggleProps {

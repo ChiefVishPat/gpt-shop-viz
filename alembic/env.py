@@ -1,3 +1,10 @@
+"""
+Alembic migration environment for gpt-shop-viz.
+
+Configures offline and online migrations, loading connection settings
+from environment variables and integrating SQLAlchemy metadata.
+"""
+
 import os
 from logging.config import fileConfig
 

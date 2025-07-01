@@ -1,3 +1,10 @@
+"""
+Bulk load products and initial snapshots from CSV.
+
+Parses an CSV of sales data, converts prices to USD, upserts products,
+and creates initial snapshots with product links.
+"""
+
 import asyncio
 import csv
 import re

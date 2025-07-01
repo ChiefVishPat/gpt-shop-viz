@@ -1,3 +1,10 @@
+"""
+OpenAI client for fetching shopping items.
+
+Builds prompts and invokes ChatCompletion, then parses the JSON output
+into a list of product entries with title, price, and URLs.
+"""
+
 import json
 import os
 import re

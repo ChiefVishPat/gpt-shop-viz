@@ -1,1 +1,7 @@
-Generic single-database configuration.
+# Alembic Migrations
+
+This directory contains database migration scripts for gpt-shop-viz.
+
+- **env.py**: Alembic environment setup for offline/online migrations,
+  loading DB settings from environment variables.
+- **versions/**: Auto-generated revision files tracking schema changes.

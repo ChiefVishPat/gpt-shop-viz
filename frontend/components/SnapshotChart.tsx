@@ -1,3 +1,8 @@
+/**
+ * Line chart visualizing price history for snapshots over time.
+ *
+ * @param data Array of SnapshotRead objects to chart.
+ */
 import React from 'react'
 import { SnapshotRead } from '@/utils/api'
 import {

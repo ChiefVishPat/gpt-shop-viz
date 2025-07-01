@@ -1,3 +1,9 @@
+"""
+CRUD operations for Product and Snapshot entities.
+
+Provides async functions to create, retrieve, and query products and their snapshots.
+"""
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -16,6 +22,14 @@ from app.schemas import (
 
 
 async def get_or_create_product(db: AsyncSession, name: str, prompt: str) -> Product:
+    """
+    Retrieve a Product by prompt, or create it if it does not exist.
+
+    :param db: Async database session
+    :param name: The product name to store if creating
+    :param prompt: The unique prompt used as lookup key
+    :return: The existing or newly created Product instance
+    """
     result = await db.execute(select(Product).where(Product.prompt == prompt))
     prod = result.scalar_one_or_none()
     if prod:
@@ -29,6 +43,13 @@ async def get_or_create_product(db: AsyncSession, name: str, prompt: str) -> Pro
 
 
 async def create_product(db: AsyncSession, product_in: ProductCreate) -> ProductRead:
+    """
+    Create a new Product and return it with its initial empty snapshots list.
+
+    :param db: Async database session
+    :param product_in: ProductCreate schema with name and prompt
+    :return: ProductRead schema including snapshots field
+    """
     # 1) Insert the Product
     db_obj = Product(**product_in.model_dump())
     db.add(db_obj)
@@ -45,6 +66,12 @@ async def create_product(db: AsyncSession, product_in: ProductCreate) -> Product
 
 
 async def get_products(db: AsyncSession) -> List[ProductRead]:
+    """
+    Retrieve all products with their snapshots.
+
+    :param db: Async database session
+    :return: List of ProductRead schemas
+    """
     result = await db.execute(
         select(Product).options(selectinload(Product.snapshots)).order_by(Product.id)
     )
@@ -52,6 +79,13 @@ async def get_products(db: AsyncSession) -> List[ProductRead]:
 
 
 async def get_product(db: AsyncSession, product_id: int) -> ProductRead | None:
+    """
+    Retrieve a single product by ID, including its snapshots.
+
+    :param db: Async database session
+    :param product_id: ID of the product to retrieve
+    :return: ProductRead schema or None if not found
+    """
     result = await db.execute(
         select(Product).where(Product.id == product_id).options(selectinload(Product.snapshots))
     )
@@ -60,6 +94,13 @@ async def get_product(db: AsyncSession, product_id: int) -> ProductRead | None:
 
 
 async def create_snapshot(db: AsyncSession, snapshot: SnapshotCreate) -> SnapshotRead:
+    """
+    Create a new Snapshot record for a product.
+
+    :param db: Async database session
+    :param snapshot: SnapshotCreate schema with product_id, title, price, urls, and optional captured_at
+    :return: SnapshotRead schema of the newly created snapshot
+    """
     # Exclude None values to allow database default for captured_at when not specified.
     db_obj = Snapshot(**snapshot.model_dump(exclude_none=True))
     db.add(db_obj)
@@ -92,6 +133,14 @@ async def get_latest_snapshots(db: AsyncSession, product_id: int) -> list[Snapsh
 
 
 async def get_snapshot_history(db: AsyncSession, product_id: int, days: int) -> List[SnapshotRead]:
+    """
+    Return the list of snapshots for a product over the past N days.
+
+    :param db: Async database session
+    :param product_id: ID of the product to query
+    :param days: Number of days to look back from now
+    :return: List of SnapshotRead schemas ordered by captured_at
+    """
     interval_str = text(f"interval '{days} days'")
     result = await db.execute(
         select(Snapshot)

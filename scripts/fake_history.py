@@ -1,3 +1,10 @@
+"""
+Seed fake price history for existing products.
+
+Generates and inserts 30 days of randomized snapshots per product
+using realistic timestamps and price fluctuations.
+"""
+
 import asyncio
 import random
 from datetime import datetime, timedelta, timezone
