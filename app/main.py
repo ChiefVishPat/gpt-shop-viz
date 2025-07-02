@@ -19,7 +19,7 @@ from scraper.openai_client import fetch_shopping_items
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # type: ignore
     # auto-create tables if they do not exist, retry until the database is ready
     import asyncio
 
@@ -140,25 +140,28 @@ async def snapshot_history(
     return await crud.get_snapshot_history(db, product_id, days)
 
 
-@app.get('/products/{product_id}/best', response_model=schemas.SnapshotRead)
+@app.get('/products/{product_id}/best_price', response_model=schemas.SnapshotRead)
 async def best_price(
     product_id: int,
-    start: Optional[date] = _DEFAULT_DATE_QUERY,
-    end: Optional[date] = _DEFAULT_DATE_QUERY,
+    start_date: Optional[date] = _DEFAULT_DATE_QUERY,
+    end_date: Optional[date] = _DEFAULT_DATE_QUERY,
     db: AsyncSession = db_dep,
 ) -> schemas.SnapshotRead:
     """
-    Get the snapshot with the lowest price for a product between start and end dates.
-    Dates are interpreted in UTC (start at 00:00:00, end at 23:59:59 UTC).
-    If multiple snapshots share the same lowest price, returns the most recent one.
+    Get the snapshot with the lowest price for a product between start_date and end_date inclusive.
+    If start_date is missing, includes all snapshots from the earliest capture timestamp.
+    If end_date is missing, uses the current UTC timestamp as the upper bound.
     """
-    start_dt = datetime.combine(start, time.min).replace(tzinfo=timezone.utc) if start else None
+    # Convert query dates to UTC datetimes or leave lower bound unbounded
+    start_dt = (
+        datetime.combine(start_date, time.min).replace(tzinfo=timezone.utc) if start_date else None
+    )
     end_dt = (
-        datetime.combine(end, time.max).replace(tzinfo=timezone.utc)
-        if end
+        datetime.combine(end_date, time.max).replace(tzinfo=timezone.utc)
+        if end_date
         else datetime.now(timezone.utc)
     )
     snap = await crud.get_lowest_price_period(db, product_id, start_dt, end_dt)
     if not snap:
-        raise HTTPException(status_code=404, detail='No snapshots found for the given period')
+        raise HTTPException(status_code=404, detail='No snapshots found in the given date range')
     return snap

@@ -1,13 +1,13 @@
 
 /**
- * Form for selecting start and end dates to fetch the best price snapshot.
+ * Form for selecting optional start_date and end_date to fetch the best-price snapshot.
  *
- * @param onFetch Callback receiving optional start and end date strings (YYYY-MM-DD).
+ * @param onFetch Callback receiving optional start_date and end_date strings (YYYY-MM-DD).
  */
 import React, { useState } from 'react'
 
 interface BestPriceFormProps {
-  onFetch: (start?: string, end?: string) => void
+  onFetch: (start_date?: string, end_date?: string) => void
 }
 
 export default function BestPriceForm({ onFetch }: BestPriceFormProps) {

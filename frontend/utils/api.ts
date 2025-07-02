@@ -124,22 +124,34 @@ interface RawSnapshot {
 }
 
 /**
- * Fetch the lowest-price snapshot for a product between start and end dates.
+ * Fetch the lowest-price snapshot for a product between optional start_date and end_date.
+ * Dates should be ISO strings (YYYY-MM-DD).
  */
 export async function getBestPrice(
   productId: number,
-  start?: string,
-  end?: string
+  start_date?: string,
+  end_date?: string
 ): Promise<SnapshotRead> {
   const params = new URLSearchParams()
-  if (start) params.append('start', start)
-  if (end) params.append('end', end)
-  const res = await fetch(
-    `${API_BASE}/products/${productId}/best${params.toString() ? '?' + params.toString() : ''}`
-  )
+  if (start_date) params.append('start_date', start_date)
+  if (end_date) params.append('end_date', end_date)
+
+  const url =
+    `${API_BASE}/products/${productId}/best_price${
+      params.toString() ? `?${params.toString()}` : ''
+    }`
+  const res = await fetch(url)
+
   if (!res.ok) {
-    throw new Error(`Error fetching best price: ${res.statusText}`)
+    let detail = res.statusText
+    // If no snapshots found in range, FastAPI returns 404 with JSON {detail: string}
+    if (res.status === 404) {
+      const body = await res.json().catch(() => null)
+      detail = body?.detail ?? 'No snapshots found in the given date range'
+    }
+    throw new Error(`Error fetching best price: ${detail}`)
   }
+
   const raw = (await res.json()) as RawSnapshot
   return {
     id: raw.id,
